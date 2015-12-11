@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+	
+	<context:property-placeholder location="classpath:hibernate.mysql.properties" />
+
+	<bean id="dataSource" class="${dataSource}" destroy-method="close">
+		<property name="driverClass" value="${driverClass}" />
+		<property name="jdbcUrl" value="${jdbcUrl}?characterEncoding=UTF-8" />
+		<property name="user" value="${user}" />
+		<property name="password" value="${password}" />
+		<property name="minPoolSize" value="${minPoolSize}" />
+		<property name="maxPoolSize" value="${maxPoolSize}" />
+		<property name="maxIdleTime" value="${maxIdleTime}" />
+		<property name="acquireIncrement" value="${acquireIncrement}" />
+		<property name="maxStatements" value="${maxStatements}" />
+		<property name="initialPoolSize" value="${initialPoolSize}" />
+		<property name="idleConnectionTestPeriod" value="${idleConnectionTestPeriod}" />
+		<property name="acquireRetryAttempts" value="${acquireRetryAttempts}" />
+		<property name="breakAfterAcquireFailure" value="${breakAfterAcquireFailure}" />
+	</bean>
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="packagesToScan">
+			<list>
+				<value>com.alimuya</value>
+			</list>
+		</property>
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+				<prop key="hibernate.current_session_context_class">org.springframework.orm.hibernate4.SpringSessionContext</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+				<prop key="hibernate.show_sql">false</prop>
+				<prop key="hibernate.format_sql">true</prop> 
+				<prop key="hibernate.use_sql_comments">true</prop> 
+				
+				<!-- <prop key="hibernate.cache.use_second_level_cache">false</prop>
+				<prop key="hibernate.cache.use_query_cache">false</prop> 
+				<prop key="hibernate.cache.provider_class">org.hibernate.cache.EhCacheProvider</prop>  -->
+				
+			</props>
+		</property>
+
+	</bean>
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<tx:annotation-driven transaction-manager="transactionManager" />
+</beans>
