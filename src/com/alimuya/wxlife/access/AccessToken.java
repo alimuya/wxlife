@@ -1,8 +1,20 @@
 package com.alimuya.wxlife.access;
 
+/**
+ * @author alimuya
+ * @date 2015年12月12日 下午11:55:29 
+ */
 public class AccessToken {
-	private int expire;
 	private String token;
+	
+	public AccessToken(String token, int expire) {
+		this.token = token;
+		this.expire = expire;
+	}
+
+	public AccessToken(){}
+	
+	private int expire;
 	
 	public int getExpire() {
 		return expire;
