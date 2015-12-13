@@ -1,7 +1,1 @@
-/applicationContext.xml
 /com/
-/ehcache.xml
-/hibernate-config.xml
-/hibernate.mysql.properties
-/log4j.properties
-/spring-servlet.xml

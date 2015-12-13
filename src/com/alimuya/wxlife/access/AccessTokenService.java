@@ -2,6 +2,10 @@ package com.alimuya.wxlife.access;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -24,8 +28,8 @@ public class AccessTokenService implements IAccessTokenService {
 	
 	private ExecutorService executorService=Executors.newFixedThreadPool(1);
 	private volatile String accessTokenStr;
-//	private Lock lock=new ReentrantLock();
-//	private Condition condition=lock.newCondition();
+	private Lock lock=new ReentrantLock();
+	private Condition condition=lock.newCondition();
 	private Runnable runnable=new Runnable() {
 		private long MIN_SLEEP_TIME=10; //单位秒;
 		@Override
@@ -38,9 +42,12 @@ public class AccessTokenService implements IAccessTokenService {
 					if(token==null){
 						Thread.sleep(MIN_SLEEP_TIME*1000);
 					}else{
+						AccessTokenService.this.lock.lock();
+						AccessTokenService.this.accessTokenStr=token.getToken();
+						AccessTokenService.this.condition.signalAll();
+						AccessTokenService.this.lock.unlock();
 						int expire = (int)(token.getExpire()*0.8);//当距离过期时间20%的时候，开始重试 
 						long sleepTime=expire>MIN_SLEEP_TIME?expire:MIN_SLEEP_TIME;
-						AccessTokenService.this.accessTokenStr=token.getToken();
 						Thread.sleep(sleepTime*1000);
 					}
 				}catch(InterruptedException e){
@@ -77,23 +84,33 @@ public class AccessTokenService implements IAccessTokenService {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.alimuya.wxlife.access.IAccessTokenService#getAccessTokenStr()
-	 */
 	@Override
 	public String getAccessTokenStr(){
 		return this.accessTokenStr;
 	}
-	
-//	public String blockGetAccessTokenStr(long timeout){
-//		if(this.accessTokenStr!=null)
-//		try{
-//			lock.lock();
-//			
-//		}finally{
-//			lock.unlock();
-//		}
-//	}
+	@Override
+	public String takeAccessTokenStr(long timeout){
+		if(this.accessTokenStr!=null){
+			return this.accessTokenStr;
+		}
+		try{
+			lock.lock();
+			if(timeout>0){
+				boolean waitResult=condition.await(timeout, TimeUnit.MILLISECONDS);
+				if(waitResult){
+					return null;
+				}
+			}else{
+				condition.await();
+			}
+			return this.accessTokenStr;
+		} catch (InterruptedException e) {
+			logger.error("takeAccessTokenStr Interrupted,return null", e);
+			return null;
+		}finally{
+			lock.unlock();
+		}
+	}
 	
 	private static class AccessTokenProtocol{
 		private String access_token;
